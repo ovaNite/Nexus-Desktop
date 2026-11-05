@@ -1,0 +1,54 @@
+name: Nexus script catalog
+on:
+  push:
+    branches: [main]
+    paths: ['Scripts/**', '.github/workflows/nexus-script-catalog.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: nexus-script-catalog
+  cancel-in-progress: false
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Build names, image pairs and hashes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,datetime
+          folder=Path("Scripts")
+          files=[p for p in folder.iterdir() if p.is_file() and not p.name.startswith(".")]
+          images={p.name.casefold():p for p in files if p.suffix.lower() in (".png",".jpg",".jpeg",".webp",".gif")}
+          entries=[];names=set()
+          for p in sorted(files,key=lambda p:p.name.casefold()):
+              if p.suffix.lower() not in (".lua",".luau"):continue
+              if p.name.casefold() in names:raise ValueError("Doppelter Skriptname")
+              names.add(p.name.casefold())
+              data=p.read_bytes();data.decode("utf-8")
+              if len(data)>1900000 or len(p.name)>180 or p.name.strip()!=p.name:raise ValueError("Skript zu gross oder ungueltiger Name: "+p.name)
+              row={"name":p.name,"path":p.as_posix(),"sha256":hashlib.sha256(data).hexdigest()}
+              for suffix in (".png",".webp",".jpg",".jpeg",".gif"):
+                  image=images.get((p.stem+suffix).casefold())
+                  if image:
+                      picture=image.read_bytes()
+                      if len(picture)>6*1024*1024:raise ValueError("Bild ueber 6 MB: "+image.name)
+                      row.update(image=image.as_posix(),imageSha256=hashlib.sha256(picture).hexdigest());break
+              entries.append(row)
+          if len(entries)>100:raise ValueError("Maximal 100 Skripte pro Bibliothek")
+          (folder/"catalog.json").write_text(json.dumps({"schema":1,"updatedAt":datetime.datetime.now(datetime.timezone.utc).isoformat(),"scripts":entries},ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+          PY
+      - name: Publish catalog
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Scripts/catalog.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Update Nexus script catalog [skip ci]'
+          git pull --rebase origin main
+          git push origin HEAD:main
