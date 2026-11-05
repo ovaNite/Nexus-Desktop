@@ -1,6 +1,6 @@
 # Nexus Downloads
 
-Aktuelle Version: **0.4.14**.
+Aktuelle Version: **0.4.15**.
 
 [Nexus-setup.exe herunterladen](https://github.com/ovaNite/Nexus-Desktop/releases/latest/download/Nexus-setup.exe)
 
