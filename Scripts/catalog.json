@@ -1,12 +1,12 @@
 {
   "schema": 1,
-  "updatedAt": "2026-11-06T16:57:23.779130+00:00",
+  "updatedAt": "2026-11-06T16:58:50.772268+00:00",
   "scripts": [
     {
       "name": "rivals.lua",
       "path": "Scripts/rivals.lua",
       "sha256": "0dd509e965cd7f639cad457b529557beb2ab7e2719c3b56cccfcd053131ce154",
-      "image": "Scripts/rivals.png",
+      "image": "Scripts/rivals.webp",
       "imageSha256": "e9428b941b03f6d92ea60870f95bdfee2586ee0333932439fd943fbd76f00253"
     }
   ]
